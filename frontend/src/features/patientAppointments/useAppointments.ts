@@ -8,6 +8,14 @@ export function useAppointments() {
   return useQuery({
     queryKey: APPOINTMENTS_QUERY_KEY,
     queryFn: fetchAppointments,
+    // An admin can move/cancel an appointment (e.g. by adding a doctor break)
+    // from a completely different browser session, so this patient's cache
+    // has no invalidation signal for that change. Refetch on a short
+    // interval and whenever the tab regains focus/is revisited so the list
+    // doesn't go stale while the patient is sitting on this page.
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
   })
 }
 

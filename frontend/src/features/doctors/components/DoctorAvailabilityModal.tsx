@@ -4,7 +4,7 @@ import { extractErrorMessage } from '../../../api/errors'
 import { Modal } from '../../../components/ui/Modal'
 import { PlusIcon, TrashIcon } from '../../../components/icons'
 import { DAYS_OF_WEEK } from '../types'
-import type { Doctor } from '../types'
+import type { Doctor, SetAvailabilityResult } from '../types'
 import { useSetDoctorAvailability } from '../useDoctors'
 
 interface Period {
@@ -43,6 +43,7 @@ function buildInitialState(doctor: Doctor): Record<number, DayRowState> {
 export function DoctorAvailabilityModal({ doctor, onClose }: DoctorAvailabilityModalProps) {
   const [rows, setRows] = useState<Record<number, DayRowState>>(() => buildInitialState(doctor))
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [lastResult, setLastResult] = useState<SetAvailabilityResult | null>(null)
   const setAvailability = useSetDoctorAvailability()
 
   function toggleDay(day: number, enabled: boolean) {
@@ -88,6 +89,7 @@ export function DoctorAvailabilityModal({ doctor, onClose }: DoctorAvailabilityM
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setValidationError(null)
+    setLastResult(null)
 
     const enabledDays = DAYS_OF_WEEK.filter((day) => rows[day.value].enabled)
 
@@ -119,7 +121,10 @@ export function DoctorAvailabilityModal({ doctor, onClose }: DoctorAvailabilityM
       })),
     )
 
-    setAvailability.mutate({ id: doctor.id, availabilities }, { onSuccess: onClose })
+    setAvailability.mutate(
+      { id: doctor.id, availabilities },
+      { onSuccess: (result) => setLastResult(result) },
+    )
   }
 
   return (
@@ -133,6 +138,19 @@ export function DoctorAvailabilityModal({ doctor, onClose }: DoctorAvailabilityM
           <p className="rounded-lg bg-danger-bg px-3 py-2 text-sm text-danger" role="alert">
             {validationError ?? extractErrorMessage(setAvailability.error)}
           </p>
+        )}
+
+        {lastResult && (lastResult.rescheduled.length > 0 || lastResult.cancelled.length > 0) && (
+          <p className="rounded-lg bg-accent-bg px-3 py-2 text-sm text-accent">
+            {lastResult.rescheduled.length > 0 &&
+              `${lastResult.rescheduled.length} appointment(s) moved to a new time to fit the updated schedule. `}
+            {lastResult.cancelled.length > 0 &&
+              `${lastResult.cancelled.length} appointment(s) had no free slot left and were cancelled.`}
+          </p>
+        )}
+
+        {lastResult && lastResult.rescheduled.length === 0 && lastResult.cancelled.length === 0 && (
+          <p className="rounded-lg bg-accent-bg px-3 py-2 text-sm text-accent">Availability saved.</p>
         )}
 
         <div className="space-y-2">
@@ -203,7 +221,7 @@ export function DoctorAvailabilityModal({ doctor, onClose }: DoctorAvailabilityM
             className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-h hover:border-accent-hover"
             onClick={onClose}
           >
-            Cancel
+            {lastResult ? 'Close' : 'Cancel'}
           </button>
           <button
             type="submit"

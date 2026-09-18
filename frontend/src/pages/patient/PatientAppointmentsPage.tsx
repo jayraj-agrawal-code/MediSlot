@@ -10,15 +10,30 @@ const STATUS_STYLES: Record<Appointment['status'], string> = {
 }
 
 export function PatientAppointmentsPage() {
-  const { data: appointments, isLoading, isError } = useAppointments()
+  const { data: appointments, isLoading, isError, isFetching, refetch } = useAppointments()
   const cancelAppointment = useCancelAppointment()
   const [pendingCancel, setPendingCancel] = useState<Appointment | null>(null)
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-text-h">My appointments</h1>
-        <p className="text-sm text-text">View and manage your booked appointments.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold text-text-h">My appointments</h1>
+          <p className="text-sm text-text">
+            View and manage your booked appointments. A doctor's admin can move or cancel an
+            appointment (e.g. adding a break); refresh to see the latest.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-h hover:border-accent-hover disabled:opacity-60"
+          onClick={() => refetch()}
+          disabled={isFetching}
+        >
+          <SpinnerIcon className={`h-4 w-4 ${isFetching ? '' : 'hidden'}`} />
+          {isFetching ? 'Refreshing…' : 'Refresh'}
+        </button>
       </div>
 
       {isLoading && (

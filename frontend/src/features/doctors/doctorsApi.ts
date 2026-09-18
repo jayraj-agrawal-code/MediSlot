@@ -5,6 +5,7 @@ import type {
   CreateBreakResult,
   Doctor,
   DoctorPayload,
+  SetAvailabilityResult,
 } from './types'
 
 interface DoctorListResponse {
@@ -40,8 +41,18 @@ export async function deleteDoctor(id: number): Promise<void> {
 export async function setDoctorAvailability(
   id: number,
   availabilities: AvailabilityEntry[],
-): Promise<void> {
-  await apiClient.put(`/admin/doctors/${id}/availabilities`, { availabilities })
+): Promise<SetAvailabilityResult> {
+  const { data } = await apiClient.put<{
+    data: SetAvailabilityResult['availabilities']
+    rescheduled_appointments: SetAvailabilityResult['rescheduled']
+    cancelled_appointments: SetAvailabilityResult['cancelled']
+  }>(`/admin/doctors/${id}/availabilities`, { availabilities })
+
+  return {
+    availabilities: data.data,
+    rescheduled: data.rescheduled_appointments,
+    cancelled: data.cancelled_appointments,
+  }
 }
 
 export async function createDoctorBreak(

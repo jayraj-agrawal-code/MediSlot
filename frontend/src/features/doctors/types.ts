@@ -45,6 +45,12 @@ export interface CreateBreakResult {
   cancelled: AffectedAppointment[]
 }
 
+export interface SetAvailabilityResult {
+  availabilities: DoctorAvailability[]
+  rescheduled: AffectedAppointment[]
+  cancelled: AffectedAppointment[]
+}
+
 export interface DoctorPayload {
   name: string
   email?: string | null
